@@ -4,6 +4,10 @@ __pycache__/
 *$py.class
 .pytest_cache/
 
+
+# private_settings
+pricetrack/config/secret_settings.py
+
 #database
 mongodb/.env
 mongodb/data/
