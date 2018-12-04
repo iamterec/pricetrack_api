@@ -1,0 +1,80 @@
+swagger: "2.0"
+info:
+    description: "This is a simple application based on aiohttp and mongodb for tracking prices or another numerical information from external web sites."
+    version: "0.0.1"
+    title: "Price tracker application"
+    contact:
+        email: "aimterec@gmail.com"
+    license:
+        name: "Apache 2.0"
+        url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "0.0.0.0:8000"
+basePath: "/"
+tags:
+    - name: "users"
+      description: "Everything about your Pets"
+schemes:
+    - "https"
+    - "http"
+paths:
+    /users:
+        post:
+            tags:
+                - "users"
+            summary: "Register a new user"
+            description: "Register new user with provided email and password"
+            operationId: "addUser"
+            consumes:
+                - "application/json"
+            produces:
+                - "application/json"
+            parameters:
+                - in: "body"
+                  name: "body"
+                  description: "User registration credentials"
+                  required: true
+                  schema:
+                      $ref: "#/definitions/UserAuth"
+            responses:
+                200:
+                    description: "User has been registered"
+                400:
+                    description: "Invalid input"
+                409:
+                    description: "User with this emal already exist"
+                422:
+                    description: "Invalid credentials"
+    /users/login:
+        post:
+            tags:
+                - "users"
+            summary: "Log in a user"
+            description: "Allow user to get a jwt token."
+            operationId: "loginUser"
+            consumes:
+                - "application/json"
+            produces:
+                - "application/json"
+            parameters:
+                - in: "body"
+                  name: "body"
+                  description: "User authorization credentials"
+                  required: true
+                  schema:
+                      $ref: "#/definitions/UserAuth"
+            responses:
+                200:
+                    description: "Ok, here is your jwt token"
+                422:
+                    description: "Unvalid credentials"
+
+definitions:
+    UserAuth:
+        type: "object"
+        properties:
+            email:
+                type: "string"
+            password: 
+                type: "string"
+
+
