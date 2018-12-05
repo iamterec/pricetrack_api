@@ -8,6 +8,10 @@ __pycache__/
 # private_settings
 pricetrack/config/secret_settings.py
 
+# swagger
+swagger/api/swagger.json
+
 #database
 mongodb/.env
+mongodb/commands.js
 mongodb/data/

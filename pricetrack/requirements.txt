@@ -1,8 +1,20 @@
 aiohttp
 asyncio
 
-# Server
+# server
 gunicorn
+
+# CORS
+aiohttp_cors
+
+# data validation
+cerberus
 
 # mongodb
 motor
+
+# JWT token authorization
+PyJWT
+
+# password hashing
+bcrypt
