@@ -44,16 +44,16 @@ class UserLogIn(web.View, CorsViewMixin):
         try:
             user = await User.get(email=data["email"])
         except UserDoesNotExist:
-            return web.json_response({"msg": "Wrong credentials"})
+            return web.json_response({"errors": ["Wrong credentials"]}, status=400)
 
         # check password
         if not user.check_password(data["password"]):
-            return web.json_response({"msg": "Wrong password"})  # ! change to "Wrong credentials"
+            return web.json_response({"errors": ["Wrong credentials"]}, status=400)
 
         payload = {
             "user_id": str(user.data["_id"])
         }
-        access_token = jwt.encode(payload, SecretConfig.SECRET)
+        access_token = jwt.encode(payload, SecretConfig.JWT_SECRET)
         return web.json_response({"access_token": access_token.decode()})
 
 
