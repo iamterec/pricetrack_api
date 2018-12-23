@@ -2,6 +2,7 @@ from config.secret_settings import SecretConfig
 from aiohttp import web
 from models.user import User
 import jwt
+from bson import ObjectId
 
 
 def login_required(func):
@@ -20,10 +21,10 @@ async def auth_middleware(request, handler):
         try:
             payload = jwt.decode(jwt_token, SecretConfig.JWT_SECRET)
         except (jwt.DecodeError, jwt.ExpiredSignatureError):
-            print(request.headers["Authorization"])
+            # print(request.headers["Authorization"])
             return web.json_response({'message': 'Token is invalid'}, status=400)
 
         # request.user = User.objects.get(id=payload['user_id'])
-        request.user = User.get(_id=payload['user_id'])
+        request.user = await User.get(_id=ObjectId(payload['user_id']))
     resp = await handler(request)
     return resp

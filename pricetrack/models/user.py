@@ -1,19 +1,21 @@
 from extensions import db
 from bcrypt import hashpw, checkpw, gensalt
 
+
 class UserDoesNotExist(Exception):
     def __init__(self, message, errors):
         super().__init__(message)
         self.errors = errors
 
+
 class User:
-    def __init__(self, email=None, password=None):
+    def __init__(self, email=None):
         self.data = {}
         self.data["email"] = email
-        self.data["password"] = password
 
     @classmethod
     async def get(cls, **kwargs):
+        # print(kwargs)
         result = await db.users.find_one(kwargs)
         if not result:
             raise UserDoesNotExist("User not foud", "User does not exist")
@@ -30,11 +32,13 @@ class User:
         # return check_password_hash(self.data["password"], password)
 
     async def save(self):
+        # if user exist
         if self.data.get("_id", None):
             user_filter = {"_id": self.data["_id"]}
             update_data = {key: value for key, value in self.data.items() if key != "_id"}
             result = await db.users.update_one(user_filter, {"$set": update_data})
             print("Save user result: ", result.raw_result)
+        # if new user
         else:
             print("Insert user".center(40, "="))
             result = await db.users.insert_one(self.data)
