@@ -21,3 +21,6 @@ bcrypt
 
 # async tasks
 celery
+
+#async requests
+requests

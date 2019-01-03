@@ -6,7 +6,6 @@ from pymongo.errors import WriteError
 from models.item import ItemDoesNotExist
 # import json
 from bson import ObjectId
-from tasks.reverse import reverse
 
 
 class ItemsResource(web.View, CorsViewMixin):
@@ -37,7 +36,7 @@ class OneItemResource(web.View, CorsViewMixin):
         if not item_id:
             return web.json_response({"error": "You must specify item_id"})
         item = await Item.get(self.request.user.data["_id"], _id=ObjectId(item_id))
-        return web.json_response({"item": item.get_dict()})
+        return web.json_response({"item": item.get_dict(with_data=True)})
 
     @login_required
     async def put(self):
@@ -57,7 +56,6 @@ class OneItemResource(web.View, CorsViewMixin):
         data = {key: value for key, value in data.items() if key in data_keys}
         data.update({"tracking": tracking})
         item.data.update(data)
-        reverse.delay(data["title"])
         try:
             await item.save()
         except WriteError:

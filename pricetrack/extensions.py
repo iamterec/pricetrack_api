@@ -2,7 +2,6 @@ from config.settings import CLIENT_URI
 from config.secret_settings import SecretConfig
 from motor.motor_asyncio import AsyncIOMotorClient
 import aiohttp_cors
-# from tasks.reverse import repeat_print
 
 db = AsyncIOMotorClient(SecretConfig.MongoURL)["pricetrack"]
 

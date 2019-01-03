@@ -1,5 +1,6 @@
 from extensions import db
 
+
 class ItemDoesNotExist(Exception):
     def __init__(self, message, errors=""):
         super().__init__(message)
@@ -44,7 +45,7 @@ class Item:
 
     @classmethod
     async def delete(self, owner_id, id):
-        item_filter = {"_id": id, "owner_id": owner_id }
+        item_filter = {"_id": id, "owner_id": owner_id}
         # try:
         result = await db.items.delete_one(item_filter)
         print("deletion result: ", result.raw_result)
@@ -52,8 +53,7 @@ class Item:
         #     return 12
 
 
-
-    def get_dict(self):
+    def get_dict(self, with_data=False):
         if self.data.get("_id", None):
             data = {}
             data["_id"] = str(self.data["_id"])
@@ -68,6 +68,10 @@ class Item:
             data["page_url"] = page_url if page_url else ""
             data["css_selector"] = css_selector if css_selector else ""
             data["attribute_name"] = attribute_name if attribute_name else ""
+
+            if self.data.get("data", False):
+                data["data"] = self.data["data"]
+
             return data
         else:
             return {}

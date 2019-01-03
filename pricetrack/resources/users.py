@@ -7,6 +7,10 @@ from pymongo.errors import DuplicateKeyError
 from cerberus import Validator
 from models.user import User, UserDoesNotExist
 import jwt
+from authorization import login_required
+import requests
+import random
+import string
 
 
 class UserSignUp(web.View, CorsViewMixin):
@@ -38,6 +42,24 @@ class UserSignUp(web.View, CorsViewMixin):
         return web.json_response({"msg": "User has been created"})
 
 
+class UserThatIsMe(web.View, CorsViewMixin):
+    @login_required
+    async def get(self):
+        return web.json_response({"user": self.request.user.get_dict()})
+
+    @login_required
+    async def put(self):
+        user = self.request.user
+        data = await self.request.json()
+        if data.get("avatar", False):
+            user.data["avatar"] = data["avatar"]
+        if data.get("username", False):
+            user.data["username"] = data["username"]
+        await user.save()
+
+        return web.json_response({"msg": "hello from patch"})
+
+
 class UserLogIn(web.View, CorsViewMixin):
     async def post(self):
         data = await self.request.json()
@@ -56,6 +78,39 @@ class UserLogIn(web.View, CorsViewMixin):
         access_token = jwt.encode(payload, SecretConfig.JWT_SECRET)
         return web.json_response({"access_token": access_token.decode()})
 
+
+def generate_random_string(length):
+    return "".join(random.choice(string.ascii_uppercase +
+                                 string.ascii_lowercase +
+                                 string.digits) for _ in range(length))
+
+
+class UserLogInWithGoogle(web.View, CorsViewMixin):
+    async def post(self):
+        data = await self.request.json()
+        access_token = data.get("access_token", None)
+        if not access_token:
+            return web.json_response({"msg": "You must pass the token"}, status=400)
+        # get information about user
+        url = "https://www.googleapis.com/oauth2/v2/userinfo"
+        response = requests.get(url, headers={"Authorization": "Bearer " + access_token})
+        user_info = response.json()
+        print(user_info)
+        # manage user and generate jwt token
+        try:
+            user = await User.get(email = user_info["email"])
+        except UserDoesNotExist:
+            print("User doesnt exist")
+            user = User(email=user_info["email"], username=user_info["name"],
+                        avatar=user_info["picture"])
+            random_str = generate_random_string(14)
+            user.set_password(random_str)
+            user_id = await user.save()
+            jwt_token = jwt.encode({"user_id": str(user_id)}, SecretConfig.JWT_SECRET)
+        else:
+            jwt_token = jwt.encode({"user_id": str(user.data["_id"])}, SecretConfig.JWT_SECRET)
+
+        return web.json_response({"access_token": jwt_token.decode()})
 
 
 class Hello(web.View, CorsViewMixin):

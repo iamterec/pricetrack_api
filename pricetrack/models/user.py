@@ -9,9 +9,11 @@ class UserDoesNotExist(Exception):
 
 
 class User:
-    def __init__(self, email=None):
+    def __init__(self, email=None, username=None, avatar=None):
         self.data = {}
         self.data["email"] = email
+        if username: self.data["username"] = username
+        if avatar: self.data["avatar"] = avatar
 
     @classmethod
     async def get(cls, **kwargs):
@@ -42,11 +44,15 @@ class User:
         else:
             print("Insert user".center(40, "="))
             result = await db.users.insert_one(self.data)
-            print(result)
+            return result.inserted_id
 
     def get_dict(self):
         data = {}
         data["email"] = self.data["email"]
         if self.data.get("_id", None):
             data["_id"] = str(self.data["_id"])
+        if self.data.get("avatar", None):
+            data["avatar"] = self.data["avatar"]
+        if self.data.get("username", None):
+            data["username"] = self.data["username"]
         return data

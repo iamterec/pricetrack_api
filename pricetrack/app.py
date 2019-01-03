@@ -8,7 +8,6 @@ import aiohttp
 
 
 def create_app():
-    # app = web.Application()
     app = web.Application(middlewares=[auth_middleware])
     setup_routes(app)
     apply_cors(app)

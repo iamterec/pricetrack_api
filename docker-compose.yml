@@ -8,6 +8,7 @@ services:
             - "8000:8000"
         volumes:
             - ./pricetrack/:/pricetrack/
+            - ./celery/tasks/:/pricetrack/tasks/
         command: >
             gunicorn -b 0.0.0.0:8000
             -k aiohttp.worker.GunicornWebWorker
@@ -26,3 +27,28 @@ services:
         volumes:
             - ./mongodb/data:/data/db
 
+    rabbitmq:
+        restart: always
+        image: rabbitmq
+        ports:
+            - "5672:5672"
+
+    celery:
+        build: ./celery/
+        restart: always
+        volumes:
+            - ./celery/:/celery/
+        depends_on:
+            - rabbitmq
+        command: celery -A tasks.scraping worker --loglevel=info
+
+    celery_beat:
+        build: ./celery/
+        restart: always
+        volumes:
+            - ./celery/:/celery/
+        depends_on:
+            - rabbitmq
+        command: >
+            sh -c "rm -f /celerypid.pid
+            && celery -A tasks.scheduled beat -s /celerybeat-schedule --pidfile=/celerypid.pid --loglevel=info"
