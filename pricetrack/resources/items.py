@@ -53,6 +53,11 @@ class OneItemResource(web.View, CorsViewMixin):
             return web.json_response({"error": "Item does not exist"}, status=404)
 
         data = await self.request.json()
+        data_keys = ["owner_id", "title", "image", "page_url",
+                     "css_selector", "attribute_name"]
+        item_data = {key: value for key, value in data.items() if key in data_keys}
+        item.data.update(item_data)
+
         # form "tracking" key separately because it is embedded dict
         tracking = {key: value for key, value in data["tracking"].items() if key in ["status", "message"]}
 
@@ -77,19 +82,16 @@ class OneItemResource(web.View, CorsViewMixin):
                     await sleep(2)
             async_res.forget()
 
-        data_keys = ["owner_id", "title", "image", "page_url",
-                     "css_selector", "attribute_name"]
-        data = {key: value for key, value in data.items() if key in data_keys}
         # data.update({"tracking": tracking})
         if task_result:
-            data.update({"tracking": task_result})
+            item.data.update({"tracking": task_result})
         else:
-            data.update({"tracking": tracking})
-        item.data.update(data)
+            item.data.update({"tracking": tracking})
+
         try:
             await item.save()
         except WriteError:
-            web.json_response({"msg": "Wrong data, write error"})
+            web.json_response({"error": "Wrong data, write error"}, status=400)
         return web.json_response({"item": item.get_dict(with_data=True)})
 
     @login_required
