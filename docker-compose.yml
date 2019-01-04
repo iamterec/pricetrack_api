@@ -40,6 +40,7 @@ services:
             - ./celery/:/celery/
         depends_on:
             - rabbitmq
+        # command: celery -A tasks.scraping worker --loglevel=info
         command: celery -A tasks.scraping worker --loglevel=info
 
     celery_beat:

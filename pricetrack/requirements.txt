@@ -24,3 +24,6 @@ celery
 
 #async requests
 requests
+
+#bs4 because celery task needs it
+beautifulsoup4

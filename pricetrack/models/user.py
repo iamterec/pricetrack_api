@@ -26,7 +26,6 @@ class User:
         return user
 
     def set_password(self, password):
-        # print(password.encode())
         self.data["password"] = hashpw(password.encode(), gensalt())
 
     def check_password(self, password):
