@@ -1,6 +1,6 @@
 from aiohttp import web
 from extensions import db
-from config.secret_settings import SecretConfig
+from config.secret_settings import SecretConfig, EmailSecret
 import json
 from aiohttp_cors import CorsViewMixin
 from pymongo.errors import DuplicateKeyError
@@ -11,6 +11,8 @@ from authorization import login_required
 import requests
 import random
 import string
+from itsdangerous import URLSafeTimedSerializer, BadTimeSignature, SignatureExpired
+from tasks.email import send_reset_link
 
 
 class UserSignUp(web.View, CorsViewMixin):
@@ -98,7 +100,7 @@ class UserLogInWithGoogle(web.View, CorsViewMixin):
         print(user_info)
         # manage user and generate jwt token
         try:
-            user = await User.get(email = user_info["email"])
+            user = await User.get(email=user_info["email"])
         except UserDoesNotExist:
             print("User doesnt exist")
             user = User(email=user_info["email"], username=user_info["name"],
@@ -111,6 +113,51 @@ class UserLogInWithGoogle(web.View, CorsViewMixin):
             jwt_token = jwt.encode({"user_id": str(user.data["_id"])}, SecretConfig.JWT_SECRET)
 
         return web.json_response({"access_token": jwt_token.decode()})
+
+
+serializer = URLSafeTimedSerializer(EmailSecret.EMAIL_SECRET_KEY)
+
+
+class UserPasswordReset(web.View, CorsViewMixin):
+    async def post(self):
+        data = await self.request.json()
+        if not data.get("email", None):
+            return web.json_response({"error": "You should provide your e-mail address"}, status=400)
+        try:
+            await User.get(email=data["email"])
+        except UserDoesNotExist:
+            return web.json_response({"error": "User doesn't exist."}, status=404)
+
+        token = serializer.dumps(data["email"], salt=EmailSecret.EMAIL_SALT)
+        send_reset_link.delay(data["email"], token)
+        return web.json_response({"msg": "Check your mails"})
+
+
+class UserPasswordChange(web.View, CorsViewMixin):
+    async def post(self):
+        print("Hello from password change")
+        data = await self.request.json()
+        try:
+            email = serializer.loads(data["token"], salt=EmailSecret.EMAIL_SALT, max_age=7200)  # 2 hour
+            user = await User.get(email=email)
+            password = data["password"]
+        except KeyError:
+            return web.json_response({"error": "You must provide token and password"}, status=400)
+        except SignatureExpired:
+            return web.json_response({"error": "Your link is expired"}, status=400)
+        except BadTimeSignature:
+            return web.json_response({"error": "Wrong token"}, status=400)
+        except UserDoesNotExist:
+            return web.json_response({"error": "User doesn't exist"}, status=404)
+
+        # password validation here
+        if len(password) < 3:
+            return web.json_response({"error": "Password is unvalid"}, status=400)
+
+        user.set_password(password)
+        await user.save()
+
+        return web.json_response({"msg": "Password has been changed"})
 
 
 class Hello(web.View, CorsViewMixin):

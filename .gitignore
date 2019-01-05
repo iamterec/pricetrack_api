@@ -16,3 +16,6 @@ swagger/api/swagger.json
 mongodb/.env
 mongodb/commands.js
 mongodb/data/
+
+# celery
+celeryd.pid

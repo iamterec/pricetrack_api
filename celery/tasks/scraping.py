@@ -6,7 +6,6 @@ from requests.exceptions import HTTPError
 import bs4
 from bson import ObjectId
 import datetime
-from time import sleep
 
 
 backend = "mongodb://denys2:rN6aJpqVyx6zTYFP@mongodb:27017/celery"
@@ -91,5 +90,3 @@ def parse_item(_id, page_url, css_selector, attribute_name):
         items.update_one({"_id": ObjectId(_id)}, {"$push": {"data": data}})
         # print("Write data to the database")
     return result
-    # return el.attrs[attribute_name]
-    # return item[::-1]
