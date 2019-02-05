@@ -1,5 +1,7 @@
 FROM python:3.6-alpine
 
+RUN adduser -S celery_user
+
 ENV CELERY_PATH /celery
 RUN mkdir -p CELERY_PATH
 

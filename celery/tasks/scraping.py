@@ -65,28 +65,22 @@ def parse_item(_id, page_url, css_selector, attribute_name):
         # add message to tracking: message and change status to stoped
         message = "Wrong page url"
         items.update_one({"_id": ObjectId(_id)}, {"$set": {"tracking": {"status": "stoped", "message": message}}})
-        # print("HTTP error")
     soup = bs4.BeautifulSoup(resp.text, "html.parser")
     el = soup.select_one(css_selector)
-    print("testttttttttttttttttttttttttt: ", attribute_name, el)
     # check if bs4 find any elements
     if not el:
         message = "Wrong css selector"
         items.update_one({"_id": ObjectId(_id)}, {"$set": {"tracking": {"status": "stoped", "message": message}}})
-        # print("wrong css selector, element not found")
     elif attribute_name:
         try:
             result = float(el[attribute_name])
             data = {"timestamp": datetime.datetime.now().timestamp(), "value": result}
             items.update_one({"_id": ObjectId(_id)}, {"$push": {"data": data}})
-            # print("Write data to the database")
         except KeyError:
             message = "Attribute not found"
             items.update_one({"_id": ObjectId(_id)}, {"$set": {"tracking": {"status": "stoped", "message": message}}})
-            # print("Wrong attribute name")
     else:
         result = float(el.text.replace(" ", ""))
         data = {"timestamp": datetime.datetime.now().timestamp(), "value": result}
         items.update_one({"_id": ObjectId(_id)}, {"$push": {"data": data}})
-        # print("Write data to the database")
     return result

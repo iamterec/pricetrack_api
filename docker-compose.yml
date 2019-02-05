@@ -40,7 +40,7 @@ services:
             - ./celery/:/celery/
         depends_on:
             - rabbitmq
-        command: celery -A tasks.email worker -Q emails --loglevel=info
+        command: celery -A tasks.email worker --uid celery_user -Q emails --loglevel=info
 
     celery_scraping:
         build: ./celery/
@@ -49,7 +49,7 @@ services:
             - ./celery/:/celery/
         depends_on:
             - rabbitmq
-        command: celery -A tasks.scraping worker --loglevel=info
+        command: celery -A tasks.scraping worker --uid celery_user --loglevel=info
 
     celery_beat:
         build: ./celery/

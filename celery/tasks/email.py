@@ -43,11 +43,9 @@ def send_reset_link(email: str, token: str):
 
         url = CLIENT_URI + "/password-change/" + token
         html = get_change_password_html(url)
-        print("HTML: ", html)
 
         msg.attach(MIMEText(html, "html"))
         server.sendmail(EmailSecret.EMAIL_ADRESS, "iamterec@gmail.com", msg.as_string())
-        print("Email has been sent")
     except Exception as e:
         print("Exception: ", e)
 
