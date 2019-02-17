@@ -1,7 +1,7 @@
 aiohttp
 asyncio
 
-# server
+# wsgi
 gunicorn
 
 # CORS
@@ -10,7 +10,7 @@ aiohttp_cors
 # data validation
 cerberus
 
-# mongodb
+# mongodb driver
 motor
 
 # JWT token authorization
@@ -24,6 +24,6 @@ celery
 requests
 itsdangerous
 
-#bs4 because celery task needs it
+# bs4 for data parsing
 beautifulsoup4
 

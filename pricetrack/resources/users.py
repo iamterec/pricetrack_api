@@ -1,14 +1,14 @@
 from aiohttp import web
-from extensions import db
 from config.secret_settings import SecretConfig, EmailSecret
-import json
+from json import JSONDecodeError
 from aiohttp_cors import CorsViewMixin
-from pymongo.errors import DuplicateKeyError
+from pymongo.errors import DuplicateKeyError, CollectionInvalid
 from cerberus import Validator
 from models.user import User, UserDoesNotExist
 import jwt
 from authorization import login_required
 import requests
+from requests import HTTPError
 import random
 import string
 from itsdangerous import URLSafeTimedSerializer, BadTimeSignature, SignatureExpired
@@ -30,16 +30,18 @@ class UserSignUp(web.View, CorsViewMixin):
 
         # validate data
         validation = self.validate_data(data)
-        if validation:
+        if validation:  # if validation contains errors
             return web.json_response({"errors": validation[0]}, status=validation[1])
 
         # create user
+        user = User(email=data["email"])
+        user.set_password(data["password"])
         try:
-            user = User(email=data["email"])
-            user.set_password(data["password"])
             await user.save()
-        except DuplicateKeyError:
+        except DuplicateKeyError:  # if user already exist
             return web.json_response({"errors": {"email": ["User with this email alredy exist"]}}, status=409)
+        except CollectionInvalid:  # if mongodb collection's validation fails
+            return web.json_response({"errors": {"email": ["Invalid data"]}})
 
         return web.json_response({"msg": "User has been created"})
 
@@ -57,12 +59,17 @@ class UserThatIsMe(web.View, CorsViewMixin):
             user.data["avatar"] = data["avatar"]
         if data.get("username", False):
             user.data["username"] = data["username"]
-        await user.save()
 
-        return web.json_response({"msg": "hello from patch"})
+        try:
+            await user.save()
+        except CollectionInvalid:
+            return web.json_response({"error": "Invalid data"})
+
+        return web.json_response({"msg": "Your data has been updated"})
 
 
 class UserLogIn(web.View, CorsViewMixin):
+
     async def post(self):
         data = await self.request.json()
         try:
@@ -93,23 +100,35 @@ class UserLogInWithGoogle(web.View, CorsViewMixin):
         access_token = data.get("access_token", None)
         if not access_token:
             return web.json_response({"msg": "You must pass the token"}, status=400)
+
         # get information about user
         url = "https://www.googleapis.com/oauth2/v2/userinfo"
-        response = requests.get(url, headers={"Authorization": "Bearer " + access_token})
-        user_info = response.json()
-        print(user_info)
+        try:
+            response = requests.get(url, headers={"Authorization": "Bearer " + access_token})
+            response.raise_for_status()
+            user_info = response.json()
+        except HTTPError:
+            return web.json_response({"error": "Can not access google servises, wrong token"}, status=400)
+        except JSONDecodeError:
+            return web.json_response({"error": "Wrong response from google servises"}, status=500)
+
         # manage user and generate jwt token
         try:
             user = await User.get(email=user_info["email"])
         except UserDoesNotExist:
-            print("User doesnt exist")
+            # register new user
             user = User(email=user_info["email"], username=user_info["name"],
                         avatar=user_info["picture"])
-            random_str = generate_random_string(14)
+            random_str = generate_random_string(14)  # set random password for user
             user.set_password(random_str)
-            user_id = await user.save()
+            try:
+                user_id = await user.save()
+            except CollectionInvalid:
+                return web.json_response({"error": "Invalid data was recived from your accaunt"}, status=500)
+
             jwt_token = jwt.encode({"user_id": str(user_id)}, SecretConfig.JWT_SECRET)
         else:
+            # user already registered, create JWT token for him
             jwt_token = jwt.encode({"user_id": str(user.data["_id"])}, SecretConfig.JWT_SECRET)
 
         return web.json_response({"access_token": jwt_token.decode()})
@@ -123,13 +142,14 @@ class UserPasswordReset(web.View, CorsViewMixin):
         data = await self.request.json()
         if not data.get("email", None):
             return web.json_response({"error": "You should provide your e-mail address"}, status=400)
+
         try:
             await User.get(email=data["email"])
         except UserDoesNotExist:
             return web.json_response({"error": "User doesn't exist."}, status=404)
 
         token = serializer.dumps(data["email"], salt=EmailSecret.EMAIL_SALT)
-        send_reset_link.delay(data["email"], token)
+        send_reset_link.delay(data["email"], token)  # give task to the Celery
         return web.json_response({"msg": "Check your mails"})
 
 
@@ -158,11 +178,3 @@ class UserPasswordChange(web.View, CorsViewMixin):
         await user.save()
 
         return web.json_response({"msg": "Password has been changed"})
-
-
-class Hello(web.View, CorsViewMixin):
-
-    async def get(self):
-        document = await db.test_collection.find_one({}, {"_id": 0})
-        print(document)
-        return web.Response(text=json.dumps(document))

@@ -26,6 +26,7 @@ services:
             - "./mongodb/.env"
         volumes:
             - ./mongodb/data:/data/db
+            - ./mongodb/initDB.js:/initDB.js
 
     rabbitmq:
         restart: always

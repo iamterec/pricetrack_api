@@ -17,7 +17,6 @@ class User:
 
     @classmethod
     async def get(cls, **kwargs):
-        # print(kwargs)
         result = await db.users.find_one(kwargs)
         if not result:
             raise UserDoesNotExist("User not foud", "User does not exist")
@@ -41,7 +40,6 @@ class User:
             print("Save user result: ", result.raw_result)
         # if new user
         else:
-            print("Insert user".center(40, "="))
             result = await db.users.insert_one(self.data)
             return result.inserted_id
 

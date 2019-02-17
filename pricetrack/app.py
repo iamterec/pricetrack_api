@@ -3,8 +3,6 @@ from authorization import auth_middleware
 from routes import setup_routes
 import logging
 from extensions import apply_cors
-import aiohttp
-
 
 
 def create_app():

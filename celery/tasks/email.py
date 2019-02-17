@@ -1,51 +1,48 @@
 from celery import Celery
-
 import smtplib
+from smtplib import SMTPException, SMTPAuthenticationError
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from config.secret_settings import EmailSecret
 
+from config.secret_settings import EmailSecret
 from config.settings import CLIENT_URI
 
 celery_app = Celery("email", broker="pyamqp://rabbitmq:5672")
 celery_app.conf.task_routes = {"tasks.email.*": {"queue": "emails"}}
-
-try:
-    server = smtplib.SMTP("smtp.gmail.com:587")
-    server.starttls()
-    server.login(EmailSecret.EMAIL_ADRESS, EmailSecret.PASSWORD)
-except Exception as e:
-    print("Exception raised during email server creation:", e)
 
 
 def get_change_password_html(link):
     with open("tasks/assets/change_password.html") as file:
         file_str = "".join(file.readlines())
         file_str = file_str.format(link=link)
-        # file_str.replace("{{Your_token_here}}", link)
     return file_str
 
 
 @celery_app.task
 def send_reset_link(email: str, token: str):
     try:
-        # server = smtplib.SMTP("smtp.gmail.com:587")
-        # server.starttls()
-        # server.login(EMAIL_ADRESS, PASSWORD)
+        server = smtplib.SMTP("smtp.gmail.com:587")
+        server.starttls()
+        server.login(EmailSecret.EMAIL_ADRESS, EmailSecret.PASSWORD)
 
         msg = MIMEMultipart('alternative')
         msg['Subject'] = "Pricetrack: change password"
         msg['From'] = EmailSecret.EMAIL_ADRESS
         msg['To'] = email
 
-        # url = UI_URL + "change-password/" + token
-        # html = render_html("./tasks/change_password.html", link=url)
-
+        # create the content of email
         url = CLIENT_URI + "/password-change/" + token
         html = get_change_password_html(url)
 
         msg.attach(MIMEText(html, "html"))
         server.sendmail(EmailSecret.EMAIL_ADRESS, "iamterec@gmail.com", msg.as_string())
+
+    except SMTPAuthenticationError:
+        print("Unable to authorize to SMTP server")
+
+    except SMTPException:  # base SMTP exception
+        print("Exception raised during SMTP connection")
+
     except Exception as e:
-        print("Exception: ", e)
+        print("Exception was rised during sending email: ", e)
 
