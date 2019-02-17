@@ -1,0 +1,4 @@
+celery
+pymongo
+requests
+beautifulsoup4
