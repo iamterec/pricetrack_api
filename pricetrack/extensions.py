@@ -1,9 +1,17 @@
+import aiohttp_cors
+import asyncio
 from config.secret_settings import SecretConfig
 from motor.motor_asyncio import AsyncIOMotorClient
-import aiohttp_cors
 
-# get database
-db = AsyncIOMotorClient(SecretConfig.MongoURL)["pricetrack"]
+
+def setup_database(app, loop):
+    if loop:
+        asyncio.set_event_loop(loop)
+        db = AsyncIOMotorClient(SecretConfig.MongoURL, io_loop=loop)["pricetrack"]
+    else:
+        db = AsyncIOMotorClient(SecretConfig.MongoURL)["pricetrack"]
+    app["db"] = db
+
 
 # handle cors
 async def change_headers(request, response):

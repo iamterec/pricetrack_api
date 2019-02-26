@@ -38,3 +38,14 @@ Then rename those files and fill USERNAME and PASSWORD (same as in previous step
 docker-compose up
 ```
 Now API should work and you can use it.
+
+### Run tests:
+To run the tests first of all run the application by:
+```shell
+docker-compose up
+```
+
+Then in another terminal window navigate to the directory of the application and run:
+```shell
+docker-compose exec pricetrack python -m pytest ./tests
+```

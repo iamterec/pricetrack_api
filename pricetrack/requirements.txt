@@ -27,3 +27,6 @@ itsdangerous
 # bs4 for data parsing
 beautifulsoup4
 
+# testing
+pytest
+pytest-aiohttp

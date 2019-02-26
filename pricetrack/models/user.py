@@ -1,4 +1,3 @@
-from extensions import db
 from bcrypt import hashpw, checkpw, gensalt
 
 
@@ -12,11 +11,13 @@ class User:
     def __init__(self, email=None, username=None, avatar=None):
         self.data = {}
         self.data["email"] = email
-        if username: self.data["username"] = username
-        if avatar: self.data["avatar"] = avatar
+        if username:
+            self.data["username"] = username
+        if avatar:
+            self.data["avatar"] = avatar
 
     @classmethod
-    async def get(cls, **kwargs):
+    async def get(cls, db, **kwargs):
         result = await db.users.find_one(kwargs)
         if not result:
             raise UserDoesNotExist("User not foud", "User does not exist")
@@ -31,7 +32,7 @@ class User:
         return checkpw(password.encode(), self.data["password"])
         # return check_password_hash(self.data["password"], password)
 
-    async def save(self):
+    async def save(self, db):
         # if user exist
         if self.data.get("_id", None):
             user_filter = {"_id": self.data["_id"]}

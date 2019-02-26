@@ -1,4 +1,3 @@
-from extensions import db
 from pymongo.errors import CursorNotFound
 
 
@@ -16,7 +15,7 @@ class Item:
         self.data["tracking"] = {"status": "stoped", "message": ""}
 
     @classmethod
-    async def get(cls, owner_id, **kwargs):
+    async def get(cls, owner_id, db, **kwargs):
         item_dict = await db.items.find_one({**kwargs, "owner_id": owner_id})
         if not item_dict:
             raise ItemDoesNotExist("Item not found")
@@ -25,7 +24,7 @@ class Item:
         return item
 
     @classmethod
-    async def get_many(cls, owner_id, quantity, projection=None):
+    async def get_many(cls, owner_id, quantity:int, db, projection=None):
         try:
             cursor = db.items.find({"owner_id": owner_id}, projection)
         except CursorNotFound:
@@ -33,7 +32,7 @@ class Item:
         items = [item for item in await cursor.to_list(length=quantity)]
         return items
 
-    async def save(self):
+    async def save(self, db):
         # restrict amount of fields that can be saved to the database
         item_keys = ["_id", "owner_id", "title", "image", "page_url",
                      "css_selector", "attribute_name", "tracking"]
@@ -48,7 +47,7 @@ class Item:
         return result
 
     @classmethod
-    async def delete(self, owner_id, id):
+    async def delete(self, owner_id, id, db):
         item_filter = {"_id": id, "owner_id": owner_id}
         result = await db.items.delete_one(item_filter)
         # result.raw_result = {"n": number, "ok": number}
@@ -75,7 +74,6 @@ class Item:
 
             if self.data.get("data", False):
                 data["data"] = self.data["data"]
-
             return data
         else:
             return {}

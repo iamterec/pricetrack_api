@@ -1,6 +1,6 @@
+from resources.items import ItemsResource, OneItemResource
 from resources.users import UserSignUp, UserLogIn, UserThatIsMe,\
                             UserLogInWithGoogle, UserPasswordReset, UserPasswordChange
-from resources.items import ItemsResource, OneItemResource
 
 
 def setup_routes(app):

@@ -1,11 +1,11 @@
+import bs4
+import datetime
+import requests
+from bson import ObjectId
 from celery import Celery
 from config.secret_settings import SecretConfig
 from pymongo import MongoClient
-import requests
 from requests.exceptions import HTTPError, ConnectionError
-import bs4
-from bson import ObjectId
-import datetime
 
 
 celery_app = Celery("scraping", backend=SecretConfig.MongoAsCeleryBackend,
@@ -37,7 +37,6 @@ def try_to_parce_page(_id: str, page_url: str, css_selector: str, attribute_name
     possible to parse this data with provided url, css_selector and attribute.
     '''
     # result = {"tracking": {"status": "tracking", "message": ""}}
-
     # get the page
     try:
         resp = requests.get(page_url)

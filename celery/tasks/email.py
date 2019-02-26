@@ -1,11 +1,11 @@
-from celery import Celery
 import smtplib
-from smtplib import SMTPException, SMTPAuthenticationError
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-
+from celery import Celery
 from config.secret_settings import EmailSecret
 from config.settings import CLIENT_URI
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from smtplib import SMTPException, SMTPAuthenticationError
+
 
 celery_app = Celery("email", broker="pyamqp://rabbitmq:5672")
 celery_app.conf.task_routes = {"tasks.email.*": {"queue": "emails"}}
